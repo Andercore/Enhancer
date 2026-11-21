@@ -12,8 +12,24 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync master with upstream
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
         run: |
-          gh repo sync Andercore/Enhancer --source k1tbyte/Wand-Enhancer --branch master
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge upstream master
+        run: |
+          set -e
+          git remote add upstream https://github.com/k1tbyte/Wand-Enhancer.git 2>/dev/null || true
+          git fetch upstream master
+          if git merge-base --is-ancestor upstream/master HEAD; then
+            echo "Fork is already synchronized."
+            exit 0
+          fi
+          git merge --no-edit upstream/master
+          git push origin HEAD:master
